@@ -1,71 +1,139 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local lp = Players.LocalPlayer
+local pgui = lp:WaitForChild("PlayerGui")
 
-local Window = Rayfield:CreateWindow({
-   Name = "OVERNIGHT HUB",
-   LoadingTitle = "Đang khởi tạo hệ thống...",
-   LoadingSubtitle = "by Uiee513",
-   ConfigurationSaving = { Enabled = false }
+-- --- TẠO GUI CHÍNH ---
+local gui = Instance.new("ScreenGui")
+gui.Name = "OvernightHubV9"
+gui.ResetOnSpawn = false
+gui.Parent = pgui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 350, 0, 250) -- Tăng kích thước để đủ chỗ cho nút
+main.Position = UDim2.new(0.5, 0, 0.5, 0)
+main.AnchorPoint = Vector2.new(0.5, 0.5)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BorderSizePixel = 0
+main.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = main
+
+local grad = Instance.new("UIGradient")
+grad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)), -- Màu cam chủ đạo
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 128)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
 })
+grad.Rotation = 45
+grad.Parent = main
 
--- --- NÚT NỔI CAM (FIX LỖI KHÔNG MỞ ĐƯỢC MENU) ---
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local ToggleButton = Instance.new("ImageButton", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(0, 10, 0.4, 0)
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
-ToggleButton.Image = "rbxassetid://6031280359"
-ToggleButton.Draggable = true
-Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 15)
+-- --- TIÊU ĐỀ ---
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "OVERNIGHT HUB v9.0"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 20
+title.Parent = main
 
-ToggleButton.MouseButton1Click:Connect(function()
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.RightControl, false, game)
-end)
+-- --- HÀM TẠO NÚT BẬT/TẮT (TOGGLE) ---
+local function CreateButton(name, pos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Size = UDim2.new(0, 300, 0, 35)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    btn.BackgroundTransparency = 0.6
+    btn.Text = name .. ": TẮT"
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 14
+    btn.Parent = main
+    
+    local bCorner = Instance.new("UICorner")
+    bCorner.CornerRadius = UDim.new(0, 6)
+    bCorner.Parent = btn
 
-local TabCombat = Window:CreateTab("Chiến Đấu", 4483362458)
-local TabFarm = Window:CreateTab("Tự Động", 4483362458)
-local TabMisc = Window:CreateTab("Tiện Ích", 4483362458)
+    local enabled = false
+    btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        btn.Text = name .. ": " .. (enabled and "BẬT" or "TẮT")
+        btn.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
+        callback(enabled)
+    end)
+end
 
--- --- 1. REACH (TĂNG TẦM ĐÁNH) ---
-_G.ReachDist = 15
-TabCombat:CreateSlider({
-   Name = "Phạm vi đánh (Reach)",
-   Range = {1, 50}, Increment = 1, Suffix = "Studs", CurrentValue = 15,
-   Callback = function(v) _G.ReachDist = v end,
-})
-
-TabCombat:CreateToggle({
-   Name = "Bật Reach",
-   CurrentValue = false,
-   Callback = function(v)
-      _G.EnableReach = v
-      task.spawn(function()
-         while _G.EnableReach do
+-- --- 1. CHỨC NĂNG REACH (ĐÁNH XA) ---
+CreateButton("BẬT REACH (15m)", UDim2.new(0.5, -150, 0, 50), function(val)
+    _G.Reach = val
+    task.spawn(function()
+        while _G.Reach do
             pcall(function()
-               local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-               if tool and tool:FindFirstChild("Handle") then
-                  tool.Handle.Size = Vector3.new(_G.ReachDist, _G.ReachDist, _G.ReachDist)
-                  tool.Handle.CanCollide = false
-               end
+                local tool = lp.Character:FindFirstChildOfClass("Tool")
+                if tool and tool:FindFirstChild("Handle") then
+                    tool.Handle.Size = Vector3.new(15, 15, 15)
+                    tool.Handle.CanCollide = false
+                end
             end)
             task.wait(0.5)
-         end
-      end)
-   end,
-})
+        end
+    end)
+end)
 
--- --- 2. AUTO LOOT (HÚT ĐỒ ĂN & QUẶNG & VẬT PHẨM) ---
-TabFarm:CreateToggle({
-   Name = "Auto Hút Mọi Vật Phẩm",
-   CurrentValue = false,
-   Callback = function(v)
-      _G.AutoLoot = v
-      task.spawn(function()
-         while _G.AutoLoot do
+-- --- 2. AUTO HÚT ĐỒ ĂN & VẬT PHẨM ---
+CreateButton("AUTO HÚT VẬT PHẨM", UDim2.new(0.5, -150, 0, 95), function(val)
+    _G.Loot = val
+    task.spawn(function()
+        while _G.Loot do
             for _, item in pairs(game.Workspace:GetChildren()) do
-               if item:IsA("BasePart") and (item.Name:lower():find("food") or item.Name:lower():find("apple") or item.Name:lower():find("ore") or item:FindFirstChild("TouchInterest")) then
-                  item.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-               end
+                if item:IsA("BasePart") and (item.Name:lower():find("food") or item:FindFirstChild("TouchInterest")) then
+                    item.CFrame = lp.Character.HumanoidRootPart.CFrame
+                end
             end
+            task.wait(0.3)
+        end
+    end)
+end)
+
+-- --- 3. BAY (FLY) ---
+CreateButton("CHẾ ĐỘ BAY", UDim2.new(0.5, -150, 0, 140), function(val)
+    _G.Fly = val
+    if val then
+        local bv = Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
+        bv.MaxForce = Vector3.new(4e5, 4e5, 4e5)
+        task.spawn(function()
+            while _G.Fly do
+                bv.Velocity = lp:GetMouse().Hit.lookVector * 50
+                task.wait()
+            end
+            bv:Destroy()
+        end)
+    end
+end)
+
+-- --- HIỆU ỨNG XOAY MÀU (GRADIENT ROTATION) ---
+task.spawn(function()
+    while true do
+        grad.Rotation = grad.Rotation + 2
+        task.wait(0.02)
+    end
+end)
+
+-- --- NÚT ĐÓNG MENU ---
+local close = Instance.new("TextButton")
+close.Size = UDim2.new(0, 30, 0, 30)
+close.Position = UDim2.new(1, -35, 0, 5)
+close.BackgroundTransparency = 1
+close.Text = "X"
+close.TextColor3 = Color3.fromRGB(255, 0, 0)
+close.Font = Enum.Font.GothamBold
+close.TextSize = 20
+close.Parent = main
+close.MouseButton1Click:Connect(function() gui:Destroy() end)
             task.wait(0.3)
          end
       end)
