@@ -1,72 +1,206 @@
+--// DEMO HUB - DÙNG CHO ROBLOX STUDIO / MAP TEST
+--// UI + Toggle + Chức năng mô phỏng (an toàn)
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
 local lp = Players.LocalPlayer
 local pgui = lp:WaitForChild("PlayerGui")
 
--- --- TẠO GUI CHÍNH ---
-local gui = Instance.new("ScreenGui")
-gui.Name = "OvernightHubV9"
-gui.ResetOnSpawn = false
-gui.Parent = pgui
+--================ CẤU HÌNH =================
+local Settings = {
+    Fly = false,
+    FlySpeed = 40,
 
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 350, 0, 250) -- Tăng kích thước để đủ chỗ cho nút
+    ESP_NPC = false,
+    ESP_Item = false,
+
+    Magnet = false,
+    MagnetRange = 15,
+}
+
+--================ GUI =================
+local gui = Instance.new("ScreenGui", pgui)
+gui.Name = "DemoHub"
+gui.ResetOnSpawn = false
+
+local main = Instance.new("Frame", gui)
+main.Size = UDim2.new(0, 340, 0, 260)
 main.Position = UDim2.new(0.5, 0, 0.5, 0)
 main.AnchorPoint = Vector2.new(0.5, 0.5)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+main.BackgroundColor3 = Color3.fromRGB(20,20,20)
 main.BorderSizePixel = 0
-main.Parent = gui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 10)
-corner.Parent = main
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,10)
 
-local grad = Instance.new("UIGradient")
-grad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 0)), -- Màu cam chủ đạo
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 128)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
-})
-grad.Rotation = 45
-grad.Parent = main
+local grad = Instance.new("UIGradient", main)
+grad.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(128,0,255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,128,255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20,20,20))
+}
 
--- --- TIÊU ĐỀ ---
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 40)
+--================ THANH TRÊN =================
+local top = Instance.new("Frame", main)
+top.Size = UDim2.new(1,0,0,40)
+top.BackgroundTransparency = 1
+
+local title = Instance.new("TextLabel", top)
+title.Size = UDim2.new(1,-20,1,0)
+title.Position = UDim2.new(0,10,0,0)
 title.BackgroundTransparency = 1
-title.Text = "OVERNIGHT HUB v9.0"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "Demo Hub - 24 Hours Overnight"
+title.TextColor3 = Color3.new(1,1,1)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.Parent = main
+title.TextSize = 16
+title.TextXAlignment = Left
 
--- --- HÀM TẠO NÚT BẬT/TẮT (TOGGLE) ---
-local function CreateButton(name, pos, callback)
+--================ KHU NÚT =================
+local body = Instance.new("Frame", main)
+body.Size = UDim2.new(1,0,1,-40)
+body.Position = UDim2.new(0,0,0,40)
+body.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", body)
+layout.Padding = UDim.new(0,8)
+layout.HorizontalAlignment = Center
+
+local function ToggleButton(text)
     local btn = Instance.new("TextButton")
-    btn.Name = name
-    btn.Size = UDim2.new(0, 300, 0, 35)
-    btn.Position = pos
-    btn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    btn.BackgroundTransparency = 0.6
-    btn.Text = name .. ": TẮT"
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Font = Enum.Font.GothamBold
+    btn.Size = UDim2.new(0,280,0,32)
+    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Font = Enum.Font.Gotham
     btn.TextSize = 14
-    btn.Parent = main
-    
-    local bCorner = Instance.new("UICorner")
-    bCorner.CornerRadius = UDim.new(0, 6)
-    bCorner.Parent = btn
+    btn.Text = text .. ": TẮT"
+    btn.BorderSizePixel = 0
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,6)
+    btn.Parent = body
+    return btn
+end
 
-    local enabled = false
+local flyBtn     = ToggleButton("Bay")
+local espNpcBtn  = ToggleButton("ESP NPC")
+local espItemBtn = ToggleButton("ESP Vật Phẩm")
+local magBtn     = ToggleButton("Hút Vật Phẩm")
+
+--================ TOGGLE LOGIC =================
+local function bindToggle(btn, key)
     btn.MouseButton1Click:Connect(function()
-        enabled = not enabled
-        btn.Text = name .. ": " .. (enabled and "BẬT" or "TẮT")
-        btn.TextColor3 = enabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 255, 255)
-        callback(enabled)
+        Settings[key] = not Settings[key]
+        btn.Text = btn.Text:split(":")[1] .. (Settings[key] and ": BẬT" or ": TẮT")
+        btn.BackgroundColor3 = Settings[key] and Color3.fromRGB(60,120,60) or Color3.fromRGB(40,40,40)
     end)
 end
 
+bindToggle(flyBtn, "Fly")
+bindToggle(espNpcBtn, "ESP_NPC")
+bindToggle(espItemBtn, "ESP_Item")
+bindToggle(magBtn, "Magnet")
+
+--================ KÉO THẢ =================
+do
+    local dragging, dragStart, startPos
+    top.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = i.Position
+            startPos = main.Position
+        end
+    end)
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local d = i.Position - dragStart
+            main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+        end
+    end)
+end
+
+--================ BAY (DEMO) =================
+task.spawn(function()
+    local bv
+    RunService.RenderStepped:Connect(function()
+        local char = lp.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if Settings.Fly and hrp then
+            if not bv then
+                bv = Instance.new("BodyVelocity", hrp)
+                bv.MaxForce = Vector3.new(1e9,1e9,1e9)
+            end
+            bv.Velocity = hrp.CFrame.LookVector * Settings.FlySpeed
+        else
+            if bv then bv:Destroy() bv=nil end
+        end
+    end)
+end)
+
+--================ ESP NPC (DEMO) =================
+task.spawn(function()
+    while task.wait(1) do
+        if Settings.ESP_NPC then
+            for _,v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and v:FindFirstChild("Humanoid") and v ~= lp.Character then
+                    if not v:FindFirstChild("ESP") then
+                        local h = Instance.new("Highlight", v)
+                        h.Name = "ESP"
+                        h.FillColor = Color3.fromRGB(255,0,0)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+--================ ESP ITEM (DEMO) =================
+task.spawn(function()
+    while task.wait(1) do
+        if Settings.ESP_Item then
+            for _,v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Tool") or v:IsA("BasePart") then
+                    if not v:FindFirstChild("ESP") then
+                        local h = Instance.new("Highlight", v)
+                        h.Name = "ESP"
+                        h.FillColor = Color3.fromRGB(0,255,255)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+--================ HÚT VẬT PHẨM (DEMO) =================
+task.spawn(function()
+    while task.wait(0.3) do
+        if Settings.Magnet then
+            local char = lp.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                for _,v in pairs(workspace:GetDescendants()) do
+                    if (v:IsA("Tool") or v:IsA("BasePart")) and v:IsDescendantOf(workspace) then
+                        if (v.Position - hrp.Position).Magnitude <= Settings.MagnetRange then
+                            pcall(function()
+                                v.CFrame = hrp.CFrame
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+--================ XOAY GRADIENT =================
+task.spawn(function()
+    while true do
+        grad.Rotation += 1
+        task.wait(0.02)
+    end
+end)
 -- --- 1. CHỨC NĂNG REACH (ĐÁNH XA) ---
 CreateButton("BẬT REACH (15m)", UDim2.new(0.5, -150, 0, 50), function(val)
     _G.Reach = val
