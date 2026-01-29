@@ -1,0 +1,139 @@
+-- Chờ game tải xong
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+local pgui = lp:WaitForChild("PlayerGui")
+
+-- Xóa Menu cũ nếu có
+if pgui:FindFirstChild("OvernightHub_VN") then pgui.OvernightHub_VN:Destroy() end
+
+local gui = Instance.new("ScreenGui", pgui)
+gui.Name = "OvernightHub_VN"
+gui.ResetOnSpawn = false
+
+-- --- NÚT TRÒN MỞ MENU (CÓ THỂ KÉO) ---
+local OpenBtn = Instance.new("ImageButton", gui)
+OpenBtn.Size = UDim2.new(0, 45, 0, 45)
+OpenBtn.Position = UDim2.new(0, 10, 0.2, 0)
+OpenBtn.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
+OpenBtn.Image = "rbxassetid://6031280359"
+OpenBtn.Draggable = true -- Cho phép kéo trên điện thoại
+Instance.new("UICorner", OpenBtn).CornerRadius = UDim.new(1, 0)
+
+-- --- MENU CHÍNH ---
+local Main = Instance.new("Frame", gui)
+Main.Size = UDim2.new(0, 280, 0, 350)
+Main.Position = UDim2.new(0.5, -140, 0.5, -175)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+Main.Visible = false
+Instance.new("UICorner", Main)
+
+-- Hiệu ứng màu mè (Gradient)
+local grad = Instance.new("UIGradient", Main)
+grad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 85, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 30))
+})
+
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "OVERNIGHT HUB VIỆT NAM"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.Font = Enum.Font.GothamBold
+Title.BackgroundTransparency = 1
+
+OpenBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+-- --- HÀM TẠO NÚT BẬT/TẮT ---
+local function TaoNut(ten, pos, callback)
+    local btn = Instance.new("TextButton", Main)
+    btn.Size = UDim2.new(0, 240, 0, 35)
+    btn.Position = UDim2.new(0.5, -120, 0, pos)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    btn.Text = ten .. ": TẮT"
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    Instance.new("UICorner", btn)
+
+    local bat = false
+    btn.MouseButton1Click:Connect(function()
+        bat = not bat
+        btn.Text = ten .. ": " .. (bat and "BẬT" or "TẮT")
+        btn.BackgroundColor3 = bat and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(40, 40, 40)
+        callback(bat)
+    end)
+end
+
+-- --- CÁC CHỨC NĂNG (CODE THẬT) ---
+
+-- 1. Hiện Quái (ESP)
+TaoNut("Hiện Quái (ESP Red)", 50, function(v)
+    _G.EspQuai = v
+    while _G.EspQuai do
+        for _, o in pairs(workspace:GetChildren()) do
+            if o:IsA("Model") and o:FindFirstChild("Humanoid") and o ~= lp.Character then
+                if not o:FindFirstChild("Highlight") then
+                    local h = Instance.new("Highlight", o)
+                    h.FillColor = Color3.new(1, 0, 0)
+                end
+            end
+        end
+        task.wait(2)
+    end
+end)
+
+-- 2. Tự Động Hút Đồ
+TaoNut("Tự Động Hút Đồ", 95, function(v)
+    _G.AutoLoot = v
+    while _G.AutoLoot do
+        for _, i in pairs(workspace:GetChildren()) do
+            if i:IsA("BasePart") and i:FindFirstChild("TouchInterest") then
+                i.CFrame = lp.Character.HumanoidRootPart.CFrame
+            end
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- 3. Bay (Fly)
+TaoNut("Chế Độ Bay", 140, function(v)
+    _G.Fly = v
+    local root = lp.Character.HumanoidRootPart
+    if v then
+        local bv = Instance.new("BodyVelocity", root)
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        task.spawn(function()
+            while _G.Fly do
+                bv.Velocity = workspace.CurrentCamera.CFrame.LookVector * 100
+                task.wait()
+            end
+            bv:Destroy()
+        end)
+    end
+end)
+
+-- 4. Tăng Tầm Đánh (Hitbox)
+TaoNut("Mở Rộng Hitbox (15m)", 185, function(v)
+    _G.Hitbox = v
+    while _G.Hitbox do
+        for _, e in pairs(workspace:GetChildren()) do
+            if e:IsA("Model") and e:FindFirstChild("HumanoidRootPart") and e ~= lp.Character then
+                e.HumanoidRootPart.Size = Vector3.new(15, 15, 15)
+                e.HumanoidRootPart.CanCollide = false
+            end
+        end
+        task.wait(1)
+    end
+end)
+
+-- 5. Chống AFK
+TaoNut("Chống Bị Văng Game", 230, function(v)
+    if v then
+        lp.Idled:Connect(function()
+            game:GetService("VirtualUser"):Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(1)
+            game:GetService("VirtualUser"):Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+    end
+end)
