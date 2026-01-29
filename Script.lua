@@ -1,72 +1,99 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-local Window = Fluent:CreateWindow({
-    Title = "OVERNIGHT HUB",
-    SubTitle = "v5.0 - FIX ALL",
-    TabWidth = 160, Size = UDim2.fromOffset(580, 460), Theme = "Dark"
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "OVERNIGHT HUB",
+   LoadingTitle = "Đang khởi tạo hệ thống...",
+   LoadingSubtitle = "by Uiee513",
+   ConfigurationSaving = { Enabled = false }
 })
 
--- --- FIX LỖI MENU (NÚT NỔI CHUẨN) ---
+-- --- NÚT NỔI CAM (FIX LỖI KHÔNG MỞ ĐƯỢC MENU) ---
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local ToggleButton = Instance.new("ImageButton", ScreenGui)
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(0, 10, 0.5, 0)
+ToggleButton.Position = UDim2.new(0, 10, 0.4, 0)
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
 ToggleButton.Image = "rbxassetid://6031280359"
-ToggleButton.Draggable = true -- Có thể kéo di chuyển
-Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 10)
+ToggleButton.Draggable = true
+Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(0, 15)
 
 ToggleButton.MouseButton1Click:Connect(function()
-    Window:Toggle() -- Nhấn để đóng/mở menu
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.RightControl, false, game)
 end)
 
-local Tabs = {
-    Main = Window:AddTab({ Title = "Chiến Đấu", Icon = "swords" }),
-    Farm = Window:AddTab({ Title = "Tự Động", Icon = "workflow" }),
-    Misc = Window:AddTab({ Title = "Tiện Ích", Icon = "settings" })
-}
+local TabCombat = Window:CreateTab("Chiến Đấu", 4483362458)
+local TabFarm = Window:CreateTab("Tự Động", 4483362458)
+local TabMisc = Window:CreateTab("Tiện Ích", 4483362458)
 
--- --- 1. TĂNG PHẠM VI TẤN CÔNG (REACH) ---
-_G.ReachSize = 15
-Tabs.Main:AddSlider("Reach", {Title = "Phạm Vi Tấn Công", Default = 15, Min = 5, Max = 50, Rounding = 1, Callback = function(v) _G.ReachSize = v end})
+-- --- 1. REACH (TĂNG TẦM ĐÁNH) ---
+_G.ReachDist = 15
+TabCombat:CreateSlider({
+   Name = "Phạm vi đánh (Reach)",
+   Range = {1, 50}, Increment = 1, Suffix = "Studs", CurrentValue = 15,
+   Callback = function(v) _G.ReachDist = v end,
+})
 
-task.spawn(function()
-    while task.wait(0.5) do
-        if _G.EnableReach then
+TabCombat:CreateToggle({
+   Name = "Bật Reach",
+   CurrentValue = false,
+   Callback = function(v)
+      _G.EnableReach = v
+      task.spawn(function()
+         while _G.EnableReach do
             pcall(function()
-                local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if tool and tool:FindFirstChild("Handle") then
-                    tool.Handle.Size = Vector3.new(_G.ReachSize, _G.ReachSize, _G.ReachSize)
-                    tool.Handle.CanCollide = false
-                end
+               local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+               if tool and tool:FindFirstChild("Handle") then
+                  tool.Handle.Size = Vector3.new(_G.ReachDist, _G.ReachDist, _G.ReachDist)
+                  tool.Handle.CanCollide = false
+               end
             end)
-        end
-    end
-end)
-Tabs.Main:AddToggle("ReachT", {Title = "Bật Reach", Default = false, Callback = function(v) _G.EnableReach = v end})
+            task.wait(0.5)
+         end
+      end)
+   end,
+})
 
--- --- 2. FIX AUTO LÚT ĐỒ ĂN & VẬT PHẨM ---
-Tabs.Farm:AddToggle("AutoLoot", {Title = "Auto Hút Mọi Vật Phẩm", Default = false, Callback = function(v)
-    _G.Loot = v
-    task.spawn(function()
-        while _G.Loot do
+-- --- 2. AUTO LOOT (HÚT ĐỒ ĂN & QUẶNG & VẬT PHẨM) ---
+TabFarm:CreateToggle({
+   Name = "Auto Hút Mọi Vật Phẩm",
+   CurrentValue = false,
+   Callback = function(v)
+      _G.AutoLoot = v
+      task.spawn(function()
+         while _G.AutoLoot do
             for _, item in pairs(game.Workspace:GetChildren()) do
-                if item:IsA("BasePart") and (item.Name:lower():find("food") or item.Name:lower():find("apple") or item:FindFirstChild("TouchInterest")) then
-                    item.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-                end
+               if item:IsA("BasePart") and (item.Name:lower():find("food") or item.Name:lower():find("apple") or item.Name:lower():find("ore") or item:FindFirstChild("TouchInterest")) then
+                  item.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+               end
             end
             task.wait(0.3)
-        end
-    end)
-end})
+         end
+      end)
+   end,
+})
 
--- --- 3. CHỨC NĂNG BAY (FLY) ---
-Tabs.Misc:AddToggle("Fly", {Title = "Bật Chế Độ Bay", Default = false, Callback = function(v)
-    _G.Flying = v
-    local lp = game.Players.LocalPlayer
-    local mouse = lp:GetMouse()
-    if v then
-        task.spawn(function()
-            local bg = Instance.new("BodyGyro", lp.Character.HumanoidRootPart)
+-- --- 3. BAY (FLY) ---
+TabMisc:CreateToggle({
+   Name = "Bật Chế Độ Bay",
+   CurrentValue = false,
+   Callback = function(v)
+      _G.Fly = v
+      local lp = game.Players.LocalPlayer
+      if v then
+         local bv = Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
+         bv.MaxForce = Vector3.new(4e5, 4e5, 4e5)
+         task.spawn(function()
+            while _G.Fly do
+               bv.Velocity = lp:GetMouse().Hit.lookVector * 60
+               task.wait()
+            end
+            bv:Destroy()
+         end)
+      end
+   end,
+})
+
+Rayfield:Notify({Title = "OVERNIGHT HUB", Content = "Đã sửa toàn bộ lỗi!", Duration = 5})
             local bv = Instance.new("BodyVelocity", lp.Character.HumanoidRootPart)
             bg.maxTorque = Vector3.new(4e5, 4e5, 4e5)
             bg.cframe = lp.Character.HumanoidRootPart.CFrame
