@@ -1,77 +1,76 @@
---// OVERNIGHT HUB - FLY + ITEM MAGNET (BASE)
+-- OVERNIGHT HUB | Việt hoá + Toggle Menu
+-- Base script: gumanba
 
--- SERVICES
-local Players = game:GetService("Players")
+local Player = game.Players.LocalPlayer
 local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
 
-local lp = Players.LocalPlayer
-local char = lp.Character or lp.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
+-- Load script gốc
+pcall(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/gumanba/Scripts/main/24HoursOvernight"))()
+end)
 
--- STATES
-local flying = false
-local flySpeed = 60
-local flyBV, flyBG
-
--- ================= UI =================
-local gui = Instance.new("ScreenGui", lp.PlayerGui)
-gui.Name = "OvernightHub"
-gui.ResetOnSpawn = false
-
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 260, 0, 180)
-main.Position = UDim2.new(0.5, 0, 0.5, 0)
-main.AnchorPoint = Vector2.new(0.5, 0.5)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.BorderSizePixel = 0
-
-local corner = Instance.new("UICorner", main)
-corner.CornerRadius = UDim.new(0, 10)
-
--- Drag UI
-do
-    local dragging, startPos, startInput
-    main.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            startInput = input.Position
-            startPos = main.Position
+-- ===== VIỆT HOÁ =====
+local function VietHoa()
+    for _,v in pairs(game:GetDescendants()) do
+        if v:IsA("TextLabel") or v:IsA("TextButton") then
+            v.Text = v.Text
+                :gsub("Goto Spawn", "Về Điểm Hồi Sinh")
+                :gsub("Auto Eat", "Tự Ăn Khi Đói")
+                :gsub("Auto Crystal & Scrap", "Tự Nhặt Crystal & Phế Liệu")
+                :gsub("Bring to Exchange", "Chuyển Đến Khu Trao Đổi")
+                :gsub("Walk Speed", "Tốc Độ Di Chuyển")
+                :gsub("Toggle Fly", "Bật / Tắt Bay")
+                :gsub("Set Speed", "Chỉnh Tốc Độ")
+                :gsub("Fullbright & NoFog", "Sáng Tối Đa & Xoá Sương")
+                :gsub("Bring Items", "Hút Vật Phẩm")
+                :gsub("Refresh Item List", "Làm Mới Danh Sách")
+                :gsub("Bring Foods", "Hút Thức Ăn")
+                :gsub("Select Item", "Chọn Vật Phẩm")
         end
-    end)
-    main.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    UIS.InputChanged:Connect(function(input)
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local delta = input.Position - startInput
-            main.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + delta.X,
-                startPos.Y.Scale, startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
+    end
 end
 
--- Title
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,40)
-title.BackgroundTransparency = 1
-title.Text = "🌙 OVERNIGHT HUB"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.TextColor3 = Color3.new(1,1,1)
+-- Việt hoá liên tục để không bị sót
+task.spawn(function()
+    while true do
+        VietHoa()
+        task.wait(1)
+    end
+end)
 
--- Button creator
-local function createButton(text, y)
-    local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(1,-30,0,40)
-    btn.Position = UDim2.new(0,15,0,y)
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-    btn.Text = text
-    btn.Font = Enum.Font.GothamBold
+-- ===== TOGGLE MENU =====
+local ToggleGui = Instance.new("ScreenGui", Player.PlayerGui)
+ToggleGui.Name = "OvernightToggle"
+
+local Btn = Instance.new("TextButton", ToggleGui)
+Btn.Size = UDim2.new(0, 120, 0, 40)
+Btn.Position = UDim2.new(0, 10, 0.5, -20)
+Btn.Text = "OVERNIGHT HUB"
+Btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Btn.TextColor3 = Color3.fromRGB(255,255,255)
+Btn.BorderSizePixel = 0
+Btn.Active = true
+Btn.Draggable = true
+
+local UICorner = Instance.new("UICorner", Btn)
+UICorner.CornerRadius = UDim.new(0, 8)
+
+-- Tìm GUI HUB gốc
+local HubGui
+task.delay(2, function()
+    for _,v in pairs(Player.PlayerGui:GetChildren()) do
+        if v:IsA("ScreenGui") and v ~= ToggleGui then
+            HubGui = v
+        end
+    end
+end)
+
+-- Bật / tắt menu
+Btn.MouseButton1Click:Connect(function()
+    if HubGui then
+        HubGui.Enabled = not HubGui.Enabled
+    end
+end)    btn.Font = Enum.Font.GothamBold
     btn.TextSize = 14
     btn.TextColor3 = Color3.new(1,1,1)
     btn.BorderSizePixel = 0
